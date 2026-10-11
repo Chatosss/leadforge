@@ -1,0 +1,13 @@
+# LeadForge — dependências próprias do projeto.
+# (Cada bot copiado em senders/ tem o seu próprio requirements.)
+
+requests>=2.31        # bridge -> API do bot de DM; ia_hook -> OpenRouter (padrão OpenAI)
+flask>=2.0            # dashboard visual (dashboard/app.py)
+apscheduler>=3.10     # scheduler daemon (scheduler.py)
+psutil>=5.9           # detecção de processos (subir.py, scheduler)
+playwright>=1.40     # bot do Instagram e PDF da proposta (python -m playwright install chromium)
+# IA: usa OpenRouter via HTTP (requests) — NÃO precisa do pacote openai.
+# Configuração no arquivo .env: LLM_BASE_URL, LLM_API_KEY, LLM_MODEL.
+
+# Opcional (para enrichment avançado):
+# dnspython>=2.3      # validação MX de e-mail (enrichment.py)

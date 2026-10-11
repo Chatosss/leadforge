@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeadForge — Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body{display:flex;min-height:100vh;background:#0a0f1a;color:#e2e8f0;font-family:"Segoe UI",Roboto,sans-serif;font-size:14px}
+
+    /* NAV LATERAL */
+    .nav{width:230px;background:#111827;border-right:1px solid #2a3a52;display:flex;flex-direction:column;position:fixed;height:100vh;z-index:30}
+    .nav-brand{padding:20px 18px 14px;border-bottom:1px solid #2a3a52}
+    .nav-brand h2{font-size:18px;color:#e2e8f0;margin:0;display:flex;align-items:center;gap:8px;font-weight:800}
+    .nav-brand h2 span{color:#00ff88;text-shadow:0 0 12px rgba(0,255,136,0.4)}
+    .nav-brand .sub{font-size:11px;color:#64748b;margin-top:2px}
+    .nav-links{flex:1;padding:8px 0;overflow-y:auto}
+    .nav-link{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13.5px;color:#64748b;cursor:pointer;border-left:3px solid transparent;transition:.15s}
+    .nav-link:hover{background:#1a2236;color:#e2e8f0}
+    .nav-link.active{background:rgba(0,255,136,0.06);color:#00ff88;border-left-color:#00ff88;font-weight:700}
+    .nav-link .icon{width:20px;text-align:center;font-size:15px}
+    .nav-footer{padding:12px 18px;border-top:1px solid #2a3a52;font-size:11px;color:#475569}
+
+    /* CONTEUDO PRINCIPAL */
+    .main{margin-left:230px;flex:1;padding:24px;min-width:0}
+
+    /* HEADER */
+    .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .hdr h1{font-size:22px;color:#e2e8f0;font-weight:800}
+    .hdr-actions{display:flex;gap:8px}
+
+    /* KPIs */
+    .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+    .kpi-card{background:#111827;border:1px solid #2a3a52;border-radius:10px;padding:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4);transition:border-color .2s}
+    .kpi-card:hover{border-color:rgba(0,255,136,0.3)}
+    .kpi-card .label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+    .kpi-card .value{font-size:26px;font-weight:800;color:#00ff88;margin-top:4px;text-shadow:0 0 8px rgba(0,255,136,0.2)}
+
+    /* STATUS */
+    .sys-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .sys-card{background:#111827;border:1px solid #2a3a52;border-radius:10px;padding:14px;box-shadow:0 4px 24px rgba(0,0,0,0.4);transition:border-color .2s}
+    .sys-card:hover{border-color:rgba(0,255,136,0.3)}
+    .sys-card .sys-title{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .sys-card .sys-status{font-size:12px;color:#64748b;line-height:1.5}
+    .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .dot.on{background:#00ff88;box-shadow:0 0 8px rgba(0,255,136,0.5)}
+    .dot.off{background:#ff4757;box-shadow:0 0 8px rgba(255,71,87,0.5)}
+    .dot.warn{background:#ffc048;box-shadow:0 0 8px rgba(255,192,72,0.5)}
+
+    /* CHARTS */
+    .chart-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:20px}
+    .chart-card{background:#111827;border:1px solid #2a3a52;border-radius:10px;padding:18px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+    .chart-card h3{font-size:14px;color:#00ff88;margin-bottom:14px;font-weight:700}
+
+    /* SUBTABS */
+    .subtabs{display:flex;gap:4px;border-bottom:1px solid #2a3a52;margin-bottom:16px;background:#111827;border-radius:8px 8px 0 0;padding:4px 10px 0}
+    .subtab{padding:8px 14px;border:0;background:none;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+    .subtab:hover{color:#e2e8f0}
+    .subtab.active{color:#00ff88;border-bottom-color:#00ff88}
+    .subpane{display:none}.subpane.active{display:block}
+
+    /* CARDS */
+    .card-box{background:#111827;border:1px solid #2a3a52;border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+    .card-box h3{font-size:14px;font-weight:700;color:#00ff88;margin-bottom:10px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .row-flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+    /* CONTAS */
+    .acc-row{display:grid;grid-template-columns:3fr 1.2fr 0.8fr 0.5fr;gap:10px;align-items:center;padding:12px 14px;border:1px solid #2a3a52;border-radius:8px;margin-bottom:6px;background:#1a2236;transition:border-color .2s}
+    .acc-row:hover{border-color:rgba(0,255,136,0.3);box-shadow:0 0 12px rgba(0,255,136,0.08)}
+    .progress-bar{height:6px;background:#1f2b3d;border-radius:3px;overflow:hidden;margin-top:6px}
+    .progress-fill{height:100%;border-radius:3px;transition:width .3s}
+    .toggle{position:relative;width:38px;height:20px;cursor:pointer;display:inline-block}
+    .toggle input{opacity:0;width:0;height:0;position:absolute}
+    .toggle .slider{position:absolute;inset:0;background:#2a3a52;border-radius:10px;transition:.2s}
+    .toggle .slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#64748b;border-radius:50%;transition:.2s}
+    .toggle input:checked+.slider{background:#00ff88}
+    .toggle input:checked+.slider:before{transform:translateX(18px);background:#0a0f1a}
+
+    /* PAINEL DE CONTEUDO */
+    .pane{display:none}.pane.active{display:block}
+
+    @media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.sys-row{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3,.chart-row{grid-template-columns:1fr}}
+    @media(max-width:800px){.nav{display:none}.main{margin-left:0}.kpi-row{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+
+<!-- NAV LATERAL -->
+<nav class="nav">
+  <div class="nav-brand">
+    <h2><span>◆</span> LeadForge</h2>
+    <div class="sub">Prospecção Multi-canal</div>
+  </div>
+  <div class="nav-links" id="nav-links">
+    <div class="nav-link active" data-tab="dashboard" onclick="switchTab('dashboard')">
+      <span class="icon">📊</span> Visão Geral
+    </div>
+    <div class="nav-link" data-tab="whatsapp" onclick="switchTab('whatsapp')">
+      <span class="icon">💬</span> WhatsApp &amp; Leads
+    </div>
+    <div class="nav-link" data-tab="chat" onclick="switchTab('chat')">
+      <span class="icon">🗨️</span> Chat ao vivo
+    </div>
+    <div class="nav-link" data-tab="instagram" onclick="switchTab('instagram')">
+      <span class="icon">📸</span> Instagram
+    </div>
+    <div class="nav-link" data-tab="aquecimento" onclick="switchTab('aquecimento')">
+      <span class="icon">🔥</span> Aquecimento
+    </div>
+    <div class="nav-link" data-tab="emails" onclick="switchTab('emails')">
+      <span class="icon">📧</span> E-mails
+    </div>
+    <div class="nav-link" data-tab="config" onclick="switchTab('config')">
+      <span class="icon">⚙️</span> Config
+    </div>
+  </div>
+  <div class="nav-footer">LeadForge v1.0 • Unificado</div>
+</nav>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div class="main">
+
+  <!-- ═════════════════════════════════════════════════════════════════════════
+       📊 1. VISÃO GERAL
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="pane active" id="pane-dashboard">
+    <div class="hdr">
+      <h1>Visão Geral</h1>
+      <div class="hdr-actions">
+        <span id="vg-atualizado" class="muted" style="font-size:11px;margin-right:8px"></span>
+        <button class="btn" onclick="recarregarTudo()">🔄 Atualizar</button>
+        <a class="btn" href="/api/export?fmt=csv">⬇ Exportar CSV</a>
+      </div>
+    </div>
+
+    <!-- RITMO DE HOJE -->
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="label">Enviados hoje</div><div class="value" id="vg-hoje">-</div></div>
+      <div class="kpi-card"><div class="label">Ainda cabem hoje</div><div class="value" id="vg-cabem">-</div></div>
+      <div class="kpi-card"><div class="label">Base alcançável</div><div class="value" id="vg-base">-</div></div>
+      <div class="kpi-card"><div class="label">Nunca contatados</div><div class="value" id="vg-novos">-</div></div>
+    </div>
+
+    <!-- POR CANAL -->
+    <div class="chart-card" style="margin-bottom:16px">
+      <h3>Ritmo por canal</h3>
+      <div id="vg-canais"></div>
+    </div>
+
+    <div class="chart-row">
+      <!-- BASE POR FERRAMENTA -->
+      <div class="chart-card">
+        <h3>Base por ferramenta</h3>
+        <div id="vg-bases"></div>
+      </div>
+      <!-- SERVIÇOS -->
+      <div class="chart-card">
+        <h3>O que está de pé</h3>
+        <div id="vg-servicos"></div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Envios nos últimos 7 dias</h3>
+        <canvas id="vg-chart-dias" height="150"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Leads do LeadForge por coluna</h3>
+        <div id="vg-kanban" style="max-height:230px;overflow:auto"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-chat">
+    <div class="hdr">
+      <h1>Chat ao vivo</h1>
+      <div class="hdr-actions"><span id="chat-status" class="muted">Atualizando conversas…</span>
+        <button class="btn" onclick="chatLoad()">🔄 Atualizar</button></div>
+    </div>
+    <div class="subtabs" id="subtabs-chat">
+      <button class="subtab active" onclick="switchSubtab('chat', 'conversas')">Conversas</button>
+      <button class="subtab" onclick="switchSubtab('chat', 'direct')">Instagram Direct</button>
+    </div>
+    <div class="subpane active" id="subpane-chat-conversas">
+    <details class="ig-oficial" id="ig-oficial" ontoggle="if(this.open) igOfCarregar()">
+      <summary><strong>Instagram pela API oficial</strong>
+        <span id="ig-of-resumo" class="muted">— carregando…</span></summary>
+      <div class="ig-of-corpo">
+        <p class="muted">As mensagens do Instagram chegam pela API oficial da Meta (webhook → relé →
+          este painel) e a resposta sai pela conta da conversa, até 24h depois da última
+          mensagem do lead. Passo a passo da Meta em <code>INSTAGRAM_API_OFICIAL_v023.md</code>.</p>
+        <div id="ig-of-rele" class="ig-of-rele muted"></div>
+        <div id="ig-of-contas" class="ig-of-contas"></div>
+        <form id="ig-of-form" class="ig-of-form" onsubmit="igOfConectar(event)">
+          <input id="ig-of-token" class="lf-input" type="password" autocomplete="off"
+            placeholder="Cole o token gerado no Painel de Apps da Meta" aria-label="Token da conta Instagram">
+          <button class="btn btn-primary" type="submit">Conectar conta</button>
+          <button class="btn" type="button" onclick="igOfSincronizar()">Buscar mensagens agora</button>
+        </form>
+      </div>
+    </details>
+    <div class="chat-shell">
+      <aside class="chat-sidebar">
+        <input id="chat-search" class="lf-input" type="search" placeholder="Buscar contato"
+          oninput="chatLoad()" aria-label="Buscar contato">
+        <select id="chat-account-filter" class="lf-input" onchange="chatLoad()" aria-label="Filtrar conta">
+          <option value="">Todas as contas</option>
+        </select>
+        <div class="chat-filters" role="group" aria-label="Filtrar canal">
+          <button class="chat-filter active" data-channel="" onclick="chatSetChannel('')">Todas</button>
+          <button class="chat-filter" data-channel="whatsapp" onclick="chatSetChannel('whatsapp')">WhatsApp</button>
+          <button class="chat-filter" data-channel="instagram" onclick="chatSetChannel('instagram')">Instagram</button>
+        </div>
+        <label class="chat-unread-toggle"><input type="checkbox" id="chat-only-unread" onchange="chatLoad()">
+          <span>Só não lidas</span><b id="chat-unread-total" class="chat-unread" hidden></b></label>
+        <div id="chat-list" class="chat-list" aria-live="polite"></div>
+      </aside>
+      <section class="chat-main" aria-label="Conversa selecionada">
+        <div id="chat-empty" class="chat-empty">Escolha uma conversa para ver as mensagens.</div>
+        <div id="chat-conversation" hidden>
+          <header class="chat-conversation-head">
+            <div><strong id="chat-peer"></strong><div class="muted" id="chat-account"></div></div>
+            <span id="chat-channel-badge" class="chat-channel-badge"></span>
+          </header>
+          <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+          <form id="chat-compose" class="chat-compose">
+            <textarea id="chat-text" class="lf-input" rows="2" maxlength="10000"
+              placeholder="Escreva uma resposta…" aria-label="Mensagem"></textarea>
+            <button class="btn btn-primary" type="submit">Enviar</button>
+          </form>
+          <div class="muted chat-manual-note" id="chat-note">Atendimento manual · a resposta será enviada pela conta desta conversa.</div>
+        </div>
+      </section>
+    </div>
+    </div>
+    <div class="subpane" id="subpane-chat-direct">
+      <div class="igd-shell">
+        <aside class="igd-lado" aria-label="Contas do Instagram">
+          <div class="igd-lado-topo">
+            <strong>Contas do Instagram</strong>
+            <span id="igd-status" class="muted">Carregando…</span>
+          </div>
+          <input id="igd-busca" class="lf-input" type="search" placeholder="Buscar conta"
+            oninput="igdRender()" aria-label="Buscar conta do Instagram">
+          <label class="chat-unread-toggle" title="Esconde, na conta aberta, as conversas já lidas">
+            <input type="checkbox" id="igd-so-nao-lidas" onchange="igdFiltro()"><span>Só não lidas</span></label>
+          <div id="igd-contas" class="igd-contas" aria-live="polite"></div>
+          <div id="igd-rodape" class="muted igd-rodape"></div>
+          <button class="btn igd-fechar-todas" type="button" id="igd-fechar-todas" onclick="igdFecharTodas()" disabled
+            title="Fecha todas as contas do Instagram abertas pelo painel">Fechar todas</button>
+        </aside>
+        <section class="igd-palco" aria-label="Direct da conta escolhida">
+          <div class="igd-barra" id="igd-barra" hidden>
+            <div class="igd-barra-titulo"><strong id="igd-titulo"></strong><span id="igd-contagem" class="muted"></span></div>
+            <div class="igd-barra-acoes">
+              <button class="btn" type="button" data-igd-nav="voltar" title="Voltar" aria-label="Voltar">←</button>
+              <button class="btn" type="button" data-igd-nav="recarregar" title="Recarregar" aria-label="Recarregar">⟳</button>
+              <button class="btn" type="button" data-igd-nav="inbox">Caixa de entrada</button>
+              <button class="btn" type="button" id="igd-fechar-atual">Fechar conta</button>
+            </div>
+          </div>
+          <div class="igd-tela" id="igd-tela">
+            <img id="igd-img" alt="Direct do Instagram ao vivo" draggable="false" hidden>
+            <div id="igd-vazio" class="igd-vazio">Escolha uma conta à esquerda e o Direct dela abre aqui.</div>
+            <textarea id="igd-teclado" class="igd-teclado" aria-label="Digitar no Instagram" autocomplete="off" spellcheck="false"></textarea>
+            <div id="igd-player" class="igd-player" hidden role="region" aria-label="Mídia do Instagram">
+              <span id="igd-player-rotulo">🔊 Áudio do Instagram</span>
+              <div id="igd-player-midia"></div>
+              <button class="btn" type="button" id="igd-player-fechar" aria-label="Fechar o player">✕</button>
+            </div>
+          </div>
+          <div class="muted igd-nota">Clique na tela e digite normalmente — você opera a conta à mão, o sistema não lê nem envia nada sozinho. Enquanto houver conta aberta aqui, a prospecção do Instagram não inicia.</div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════════════════
+       💬 3. WHATSAPP
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-whatsapp">
+    <div class="hdr">
+      <h1>WhatsApp &amp; Leads</h1>
+      <div class="hdr-actions">
+        <input type="search" id="kanban-search" placeholder="🔍 Buscar lead..." class="lf-input" style="width:240px">
+        <button class="btn btn-primary" onclick="abrirNovoLead()">+ Novo lead</button>
+        <button class="btn" onclick="waLoadSubpane(WA_SUB)">🔄 Atualizar</button>
+      </div>
+    </div>
+
+    <div class="subtabs" id="subtabs-wa">
+      <button class="subtab active" onclick="switchSubtab('wa', 'funil')">Funil de Leads</button>
+      <button class="subtab" onclick="switchSubtab('wa', 'mensagens')">Mensagens &amp; Campanhas</button>
+      <button class="subtab" onclick="switchSubtab('wa', 'raspagem')">Raspagem (Google Maps)</button>
+      <button class="subtab" onclick="switchSubtab('wa', 'agendamento')">Agendamento</button>
+      <button class="subtab" onclick="switchSubtab('wa', 'contas')">Contas</button>
+    </div>
+
+    <!-- SUBPANE: FUNIL -->
+    <div class="subpane active" id="subpane-wa-funil">
+      <!-- QUADROS: um funil por empresa atendida -->
+      <div class="quadro-bar" id="quadro-bar"></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <div id="kanban-count" class="muted" style="font-size:12px"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span id="wa-op-estado" class="muted" style="font-size:12px"></span>
+          <button class="btn btn-danger btn-sm" id="wa-btn-abortar" onclick="pararEnvio()">■ Abortar envio</button>
+        </div>
+      </div>
+      <div id="envio-progresso" class="card-box" style="display:none;margin-bottom:12px"></div>
+      <div class="board" id="board"></div>
+
+      <div class="grid-2" style="margin-top:16px">
+        <div class="card-box">
+          <h3>Inserir lead manualmente</h3>
+          <p class="muted">Só o nome é obrigatório. O resto pode ser preenchido depois, na gaveta do card.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px">
+            <div><label class="lf-label">Nome *</label><input id="man-nome" class="lf-input"></div>
+            <div><label class="lf-label">Categoria</label><input id="man-categoria" class="lf-input"></div>
+            <div><label class="lf-label">Telefone</label><input id="man-telefone" class="lf-input"></div>
+            <div><label class="lf-label">E-mail</label><input id="man-email" class="lf-input"></div>
+            <div><label class="lf-label">Instagram</label><input id="man-instagram" class="lf-input"></div>
+            <div><label class="lf-label">Website</label><input id="man-website" class="lf-input"></div>
+            <div><label class="lf-label">CNPJ</label><input id="man-cnpj" class="lf-input"></div>
+            <div><label class="lf-label">Endereço</label><input id="man-endereco" class="lf-input"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="inserirManual()">+ Adicionar lead</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Importar leads de arquivo</h3>
+          <p class="muted">CSV ou XLSX. Quem já existe não entra duas vezes.</p>
+          <input type="file" id="import-file" class="lf-input" style="margin-top:10px" accept=".csv,.xlsx,.xls">
+          <button class="btn btn-primary" style="margin-top:10px" onclick="importar()">Importar arquivo</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUBPANE: MENSAGENS & CAMPANHAS -->
+    <div class="subpane" id="subpane-wa-mensagens">
+      <!-- Personalização por lead: preenchido por persoDesenhar('whatsapp') -->
+      <div class="card-box" id="perso-whatsapp" style="margin-bottom:16px"></div>
+      <div class="card-box" style="margin-bottom:16px">
+        <h3>Campanhas</h3>
+        <p class="muted">Uma campanha é a sequência de mensagens do primeiro contato em diante. Só entra no rodízio depois que a abertura estiver escrita.</p>
+        <div style="display:flex;gap:8px;align-items:end;margin:10px 0">
+          <div style="flex:1">
+            <label class="lf-label">Nome da campanha</label>
+            <input id="camp-nova" placeholder="ex.: Odonto — dor de dente" class="lf-input">
+          </div>
+          <button class="btn btn-primary" onclick="criarCampanha()">+ Criar campanha</button>
+        </div>
+        <div id="camp-list"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card-box">
+          <h3 id="tpl-titulo">Novo template</h3>
+          <div id="tpl-campanha-aviso" class="muted" style="display:none;font-size:12px;padding:8px;border:1px solid #2a3a52;border-radius:6px;margin-bottom:8px"></div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Canal</label>
+            <select id="tpl-canal" class="lf-input"></select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Nome (uso interno)</label>
+            <input id="tpl-nome" placeholder="ex.: Abertura — dor de dente" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label" id="tpl-assunto-l">Assunto (só e-mail)</label>
+            <input id="tpl-assunto" placeholder="Assunto do e-mail" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label" id="tpl-etapa-l">Etapa da esteira (só WhatsApp)</label>
+            <select id="tpl-etapa" class="lf-input"></select>
+            <div id="tpl-etapa-uso" class="muted" style="font-size:11px;margin-top:4px"></div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Mensagem</label>
+            <textarea id="tpl-corpo" rows="10" class="lf-input"></textarea>
+            <div class="muted" style="font-size:11px;margin-top:4px">Variáveis: <code>{nome}</code>, <code>{nome_curto}</code>, <code>{artigo}</code>, <code>{cidade}</code>, <code>{nota}</code>, <code>{avaliacoes}</code>, <code>{saudacao}</code>… · variação <code>{Oi|Olá}</code> · bloco <code>{se nota: …}</code> — lista completa em <b>Personalização por lead</b>, no alto desta aba</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-primary" id="tpl-salvar" onclick="salvarTemplate()">Salvar template</button>
+            <button class="btn" id="tpl-cancelar" style="display:none" onclick="cancelarEdicaoTemplate()">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3>Templates soltos</h3>
+          <p class="muted">Mensagens que não pertencem a nenhuma campanha. As de campanha se editam no cartão de cima, onde a posição na sequência aparece.</p>
+          <div id="tpl-list" class="list" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Prospecção em lote</h3>
+        <p class="muted">Escolhe o canal, o template e os leads. <b>Pré-visualizar</b> mostra o texto já renderizado, lead a lead, sem enviar nada.</p>
+        <div class="row-flex" style="margin:10px 0;gap:10px;flex-wrap:wrap">
+          <div>
+            <label class="lf-label">Canal</label>
+            <select id="pros-canal" class="lf-input" style="width:150px" onchange="carregarTemplatesCanal()"></select>
+          </div>
+          <div>
+            <label class="lf-label">Template</label>
+            <select id="pros-template" class="lf-input" style="width:260px"></select>
+          </div>
+          <div>
+            <label class="lf-label">Coluna</label>
+            <select id="pros-coluna" class="lf-input" style="width:200px" onchange="carregarLeadsProspeccao()"></select>
+          </div>
+        </div>
+        <div id="pros-leads" style="max-height:240px;overflow:auto;border:1px solid #2a3a52;border-radius:6px;padding:8px"></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <button class="btn" onclick="previewProspeccao()">👁 Pré-visualizar</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8">
+            <input type="checkbox" id="pros-enviar"> enviar de verdade
+          </label>
+          <button class="btn btn-primary" onclick="dispararProspeccao()">Disparar</button>
+        </div>
+        <div id="pros-resultado" style="margin-top:12px;max-height:420px;overflow:auto"></div>
+      </div>
+    </div>
+
+    <!-- SUBPANE: RASPAGEM -->
+    <div class="subpane" id="subpane-wa-raspagem">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Nova busca no Google Maps</h3>
+          <p class="muted">O que buscar e onde. Cada busca vira leads novos no funil, sem duplicar quem já existe.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">Termo</label>
+            <input id="scrap-termo" placeholder="ex.: clínica odontológica" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Localização</label>
+            <input id="scrap-local" placeholder="ex.: Maceió AL — ou só 'Alagoas'"
+                   class="lf-input" oninput="scrapPrever()">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Cobertura</label>
+            <select id="scrap-modo" class="lf-input" onchange="scrapPrever()">
+              <option value="busca">Uma busca (rápida)</option>
+              <option value="estado">Estado inteiro (varredura, área por área)</option>
+            </select>
+          </div>
+          <div id="scrap-varredura" style="margin-top:8px;display:none">
+            <label class="lf-label">Até quantas áreas do mapa</label>
+            <select id="scrap-orcamento" class="lf-input" onchange="scrapPrever()">
+              <option value="12">12 áreas — cerca de 9 min</option>
+              <option value="30" selected>30 áreas — cerca de 22 min</option>
+              <option value="60">60 áreas — cerca de 45 min</option>
+              <option value="120">120 áreas — cerca de 1h30</option>
+            </select>
+          </div>
+          <div id="scrap-previsao" class="muted" style="font-size:11px;margin-top:6px"></div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="addScrap()">+ Adicionar à fila</button>
+          <p class="muted" style="font-size:11px;margin-top:8px">A coleta abre um navegador e rola a lista do Maps. Enquanto roda, você acompanha a tela dela aqui embaixo.</p>
+        </div>
+        <div class="card-box">
+          <h3>Fila de buscas</h3>
+          <div id="scrap-list" class="list"></div>
+        </div>
+      </div>
+
+      <div class="card-box" id="scrap-live-card" style="display:none;margin-top:16px">
+        <div class="coleta-cab">
+          <span class="coleta-farol" id="scrap-farol"></span>
+          <h3 style="margin:0">Coleta ao vivo</h3>
+          <span class="busca-leads" id="scrap-live-termo"></span>
+          <span style="margin-left:auto;font-size:13px;color:#94a3b8">
+            <b class="coleta-num" id="scrap-live-count">0</b> encontrados</span>
+        </div>
+        <div class="coleta-barra" id="scrap-barra"><div class="coleta-barra-fill"></div></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div id="scrap-live-msg" class="muted" style="font-size:12px;flex:1"></div>
+          <button id="scrap-pausar" class="btn btn-sm" style="display:none"
+                  title="para depois da rolagem atual; nada do que já foi lido se perde"
+                  onclick="scrapPausar()">⏸ Pausar</button>
+        </div>
+        <div class="grid-2">
+          <div class="coleta-tela">
+            <img id="scrap-live-img" alt="" data-vazio="1">
+            <div class="coleta-esqueleto" id="scrap-esqueleto">
+              <div class="girador"></div>
+              <div id="scrap-esqueleto-txt">abrindo o navegador...</div>
+            </div>
+          </div>
+          <div id="scrap-live-list" style="max-height:420px;overflow:auto"></div>
+        </div>
+        <div id="scrap-live-fim" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- SUBPANE: AGENDAMENTO -->
+    <div class="subpane" id="subpane-wa-agendamento">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Agendar início dos envios</h3>
+          <p class="muted">Começa a rodada de primeiro contato no horário marcado.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">Horário</label>
+            <input id="ag-whatsapp-hora" type="time" value="09:00" class="lf-input" style="width:140px">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Dias da semana</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="0" checked> seg</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="1" checked> ter</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="2" checked> qua</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="3" checked> qui</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="4" checked> sex</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="5"> sáb</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-whatsapp-dia" value="6"> dom</label></div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Quadro</label>
+            <select id="ag-whatsapp-quadro" class="lf-input"></select>
+          </div>
+          <p class="muted" style="font-size:11px;margin-top:8px">Dispara a fila da coluna
+          <b>Entrar em contato</b> <b>do quadro escolhido</b>, com as mesmas travas do botão manual:
+          janela de horário, teto do número, bot conectado e identidade de cada lead.</p>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="agCriar('whatsapp')">+ Criar agendamento</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Próximo disparo</h3>
+          <div id="ag-whatsapp-proximo"></div>
+          <p class="muted" style="font-size:11px;margin-top:10px">O agendamento roda pelo daemon,
+          que sobe junto com o painel. Deixe o LeadForge aberto no horário marcado.</p>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Agendamentos deste canal</h3>
+        <div id="ag-whatsapp-lista"></div>
+      </div>
+    </div>
+
+<div class="subpane" id="subpane-wa-contas">
+      <!-- ADICIONAR CONTA -->
+      <div class="chart-card" style="margin-bottom:16px">
+        <h3>Adicionar Conta WhatsApp</h3>
+        <p class="muted">Configure uma nova conta WhatsApp para envio de mensagens.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:10px">
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Telefone (com DDI)</label>
+            <input id="acc-wa-phone" placeholder="5582999990000" style="padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;width:200px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Nome de Exibição</label>
+            <input id="acc-wa-nome" placeholder="Nome da conta" style="padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;width:160px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Limite/dia</label>
+            <input id="acc-wa-limite" type="number" min="1" max="200" value="30" style="width:80px;padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <button class="btn btn-primary" onclick="accCriarWA()">+ Adicionar WhatsApp</button>
+        </div>
+      </div>
+      <!-- LISTA -->
+      <div class="chart-card">
+        <h3>Contas WhatsApp Cadastradas</h3>
+        <div id="acc-wa"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════════════════
+       📸 4. INSTAGRAM
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-instagram">
+    <div class="hdr">
+      <h1>Instagram DM Bot</h1>
+      <div class="hdr-actions">
+        <button class="btn" onclick="igCarregarTudo()">🔄 Atualizar</button>
+      </div>
+    </div>
+
+    <!-- Nicho ativo: vale para TODAS as sub-abas. Keywords, fontes, templates e
+         CRM são por nicho, e escolher em cada uma seria escolher quatro vezes. -->
+    <div class="card-box" style="margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div>
+        <label class="lf-label">Nicho ativo</label>
+        <select id="ig-sel-nicho" class="lf-input" style="min-width:260px" onchange="igTrocarNichoAtivo()"></select>
+      </div>
+      <div id="ig-nicho-resumo" class="muted" style="font-size:12px;flex:1"></div>
+    </div>
+
+    <!-- SUBTABS INSTAGRAM -->
+    <div class="subtabs" id="subtabs-ig">
+      <button class="subtab active" onclick="switchSubtab('ig', 'controle')">Controle &amp; Disparo</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'nichos')">Nichos &amp; Fontes</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'templates')">Templates A/B</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'keywords')">Keywords</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'crm')">CRM de DMs</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'agendamento')">Agendamento</button>
+      <button class="subtab" onclick="switchSubtab('ig', 'perfis')">Perfis</button>
+    </div>
+
+    <!-- SUBPANE: CONTROLE -->
+    <div class="subpane active" id="subpane-ig-controle">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Status do Bot de Instagram</h3>
+          <p class="muted">Serviço de automação de DM (porta 5022).</p>
+          <div id="ig-bot-status-box" style="margin:12px 0">Verificando...</div>
+          <div style="margin:12px 0">
+            <label class="lf-label">Remetente</label>
+            <select id="ig-conta-disparo" class="lf-input"></select>
+            <div class="muted" style="font-size:11px;margin-top:4px">Em paralelo, cada conta abre
+            o próprio navegador e trabalha ao mesmo tempo, até bater o próprio teto de 24h.</div>
+          </div>
+          <div class="row-flex" style="margin-top:12px;gap:8px">
+            <button class="btn btn-primary" id="ig-btn-iniciar" onclick="igIniciarBot()">▶ Iniciar disparo do nicho ativo</button>
+            <button class="btn btn-danger" id="ig-btn-abortar" onclick="igAbortar()">■ Abortar operação</button>
+          </div>
+        </div>
+        <div class="card-box">
+          <h3>Estatísticas do Nicho</h3>
+          <div id="ig-nicho-stats" style="margin:12px 0">Selecione um nicho.</div>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Operação ao vivo</h3>
+        <div id="ig-operacao" style="margin-bottom:10px"></div>
+        <pre id="ig-log" style="background:#0f1626;border:1px solid #2a3a52;border-radius:6px;padding:10px;max-height:280px;overflow:auto;font-size:11px;color:#94a3b8;white-space:pre-wrap;margin:0">sem atividade recente.</pre>
+      </div>
+    </div>
+
+    <!-- SUBPANE: NICHOS & FONTES -->
+    <div class="subpane" id="subpane-ig-nichos">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Novo Nicho</h3>
+          <div class="row-flex" style="margin:10px 0">
+            <input id="ig-novo-nicho" placeholder="Nome do nicho (ex: estetica_sp)" style="padding:8px;border:1px solid #e3e9ef;border-radius:6px;flex:1">
+            <button class="btn btn-primary" onclick="igCriarNicho()">Criar Nicho</button>
+          </div>
+          <div id="ig-lista-nichos" style="margin-top:14px"></div>
+        </div>
+        <div class="card-box">
+          <h3>Fontes de Extração (@)</h3>
+          <p class="muted">Perfis de onde os seguidores serão extraídos (um por linha).</p>
+          <textarea id="ig-fontes" rows="8" style="margin-top:8px;font-family:monospace"></textarea>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="igSalvarFontes()">Salvar Fontes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANE: TEMPLATES A/B -->
+    <div class="subpane" id="subpane-ig-templates">
+      <!-- Personalização por lead: preenchido por persoDesenhar('instagram') -->
+      <div class="card-box" id="perso-instagram" style="margin-bottom:16px"></div>
+      <div class="card-box">
+        <h3>Templates de Mensagem A/B</h3>
+        <p class="muted">Varie as abordagens para testar qual copy converte mais. Variáveis: <code>{nome}</code> (primeiro nome), <code>{nome_perfil}</code>, <code>{usuario}</code>, <code>{saudacao}</code> · variação <code>{Oi|Olá}</code> · bloco <code>{se nome: …}</code></p>
+        <div id="ig-templates-lista" style="margin-top:12px"></div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="igAdicionarTemplate()">+ Adicionar Template</button>
+      </div>
+    </div>
+
+    <!-- SUBPANE: KEYWORDS -->
+    <div class="subpane" id="subpane-ig-keywords">
+      <div class="grid-3">
+        <div class="card-box">
+          <h3>Palavras-Chave (Bio)</h3>
+          <p class="muted">Termos que o prospect DEVE ter na biografia.</p>
+          <textarea id="ig-kw-busca" rows="10" style="margin-top:8px;font-family:monospace"></textarea>
+        </div>
+        <div class="card-box">
+          <h3>Palavras de Contexto</h3>
+          <p class="muted">Termos contextuais adicionais.</p>
+          <textarea id="ig-kw-contexto" rows="10" style="margin-top:8px;font-family:monospace"></textarea>
+        </div>
+        <div class="card-box">
+          <h3>Lista Negra (Bloquear)</h3>
+          <p class="muted">Se a bio tiver esses termos, ignora.</p>
+          <textarea id="ig-kw-bloqueio" rows="10" style="margin-top:8px;font-family:monospace"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:10px" onclick="igSalvarKeywords()">Salvar Todas as Keywords</button>
+    </div>
+
+    <!-- SUBPANE: CRM -->
+    <div class="subpane" id="subpane-ig-crm">
+      <div class="card-box">
+        <h3>CRM &amp; Rastreamento de DMs</h3>
+        <div id="ig-crm-tabela" style="max-height:400px;overflow:auto"></div>
+      </div>
+    </div>
+      <!-- SUBPANE: AGENDAMENTO -->
+    <div class="subpane" id="subpane-ig-agendamento">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Agendar início dos envios</h3>
+          <p class="muted">Põe o bot de DM para prospectar um nicho no horário marcado.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">Horário</label>
+            <input id="ag-instagram-hora" type="time" value="09:00" class="lf-input" style="width:140px">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Dias da semana</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="0" checked> seg</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="1" checked> ter</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="2" checked> qua</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="3" checked> qui</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="4" checked> sex</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="5"> sáb</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-instagram-dia" value="6"> dom</label></div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Nicho</label>
+            <select id="ag-instagram-nicho" class="lf-input"></select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Conta remetente</label>
+            <select id="ag-instagram-conta" class="lf-input"></select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Mensagem</label>
+            <textarea id="ag-instagram-mensagem" rows="4" class="lf-input" placeholder="Oi {nome}, ..."></textarea>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="agCriar('instagram')">+ Criar agendamento</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Próximo disparo</h3>
+          <div id="ag-instagram-proximo"></div>
+          <p class="muted" style="font-size:11px;margin-top:10px">O agendamento roda pelo daemon,
+          que sobe junto com o painel. Deixe o LeadForge aberto no horário marcado.</p>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Agendamentos deste canal</h3>
+        <div id="ag-instagram-lista"></div>
+      </div>
+    </div>
+
+<div class="subpane" id="subpane-ig-perfis">
+      <!-- ADICIONAR CONTA -->
+      <div class="chart-card" style="margin-bottom:16px">
+        <h3>Adicionar Conta Instagram</h3>
+        <p class="muted">Configure uma nova conta Instagram para envio de DMs.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:10px">
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">@Username</label>
+            <input id="acc-ig-user" placeholder="@usuario" style="padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;width:180px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Nome de Exibição</label>
+            <input id="acc-ig-nome" placeholder="Principal" style="padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;width:160px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Limite/dia</label>
+            <input id="acc-ig-limite" type="number" min="1" max="200" value="15" style="width:80px;padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;background:#1a2236;color:#e2e8f0">
+          </div>
+          <button class="btn btn-primary" onclick="accCriarIG()">+ Adicionar Instagram</button>
+        </div>
+      </div>
+      <!-- AUTENTICAÇÃO -->
+      <div class="chart-card" style="margin-bottom:16px">
+        <h3>Autenticar Sessão Instagram</h3>
+        <p class="muted">Abre o navegador para fazer login manual e salvar o cookie da conta.</p>
+        <div style="display:flex;gap:8px;align-items:end;margin-top:10px">
+          <div>
+            <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block">Conta para autenticar</label>
+            <select id="ig-auth-conta" style="padding:8px;border:1px solid #2a3a52;border-radius:6px;font-size:13px;min-width:200px;background:#1a2236;color:#e2e8f0"></select>
+          </div>
+          <button class="btn btn-primary" onclick="igAutenticarConta()">🔑 Abrir Navegador para Login</button>
+        </div>
+        <div id="ig-auth-status" style="margin-top:10px;font-size:12px;color:#64748b"></div>
+      </div>
+      <!-- LISTA -->
+      <div class="chart-card">
+        <h3>Contas Instagram Cadastradas</h3>
+        <div id="acc-ig"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="pane" id="pane-aquecimento">
+    <div class="hdr">
+      <h1>Aquecimento do Instagram</h1>
+      <div class="hdr-actions">
+        <span id="aq-status" class="muted">Carregando contas…</span>
+        <button class="btn" onclick="aqCarregar()">🔄 Atualizar</button>
+      </div>
+    </div>
+    <div class="card-box">
+      <h3>Sessões de Reels</h3>
+      <p class="muted">Ative uma conta para abrir o Reels na sessão autenticada. Os vídeos passam sozinhos ao terminar; você pode rolar, curtir ou salvar à mão quando quiser. Desative para fechar a janela e liberar o perfil.</p>
+      <div class="aq-notice"><strong>Rolagem:</strong> quando o vídeo termina, a janela passa sozinha para o próximo Reel (com uma pausa curta); vídeo com erro ou travado também é passado. O sistema não curte, não comenta e não salva publicações. Enquanto a sessão estiver aberta, a prospecção dessa conta fica bloqueada para evitar conflito de perfil.</div>
+      <div class="aq-notice"><strong>Leve:</strong> os vídeos tocam na menor qualidade e sem som, e todas as contas abrem num navegador só, uma de cada vez.</div>
+      <div class="aq-todas">
+        <label class="lf-label" for="aq-duracao">Fechar sozinho depois de</label>
+        <select id="aq-duracao" class="lf-input"><option value="">sem limite (até eu fechar)</option><option value="30">30 min</option><option value="60">1 hora</option><option value="90">1h30</option><option value="120">2 horas</option><option value="180">3 horas</option></select>
+        <button class="btn btn-primary" onclick="aqTodas(true)">▶ Ativar todas</button>
+        <button class="btn" onclick="aqTodas(false)">■ Desativar todas</button>
+      </div>
+      <div id="aq-accounts" class="aq-accounts" aria-live="polite"></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card-box">
+        <h3>Agendar o aquecimento</h3>
+        <p class="muted">Abre (ou fecha) o Reels de todas as contas com sessão no horário marcado.</p>
+        <div style="margin-top:10px">
+          <label class="lf-label">Horário</label>
+          <input id="ag-aquecimento-hora" type="time" value="09:00" class="lf-input" style="width:140px">
+        </div>
+        <div style="margin-top:8px">
+          <label class="lf-label">Dias da semana</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="0" checked> seg</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="1" checked> ter</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="2" checked> qua</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="3" checked> qui</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="4" checked> sex</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="5"> sáb</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-aquecimento-dia" value="6"> dom</label></div>
+        </div>
+        <div style="margin-top:8px">
+          <label class="lf-label">O que fazer</label>
+          <select id="ag-aquecimento-acao" class="lf-input">
+            <option value="ativar">Ativar todas as contas</option>
+            <option value="desativar">Desativar todas as contas</option>
+          </select>
+        </div>
+        <div style="margin-top:8px">
+          <label class="lf-label">Fechar sozinho depois de</label>
+          <select id="ag-aquecimento-duracao" class="lf-input"><option value="">sem limite (até eu fechar)</option><option value="30">30 min</option><option value="60">1 hora</option><option value="90">1h30</option><option value="120">2 horas</option><option value="180">3 horas</option></select>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px" onclick="agCriar('aquecimento')">+ Criar agendamento</button>
+      </div>
+      <div class="card-box">
+        <h3>Próximo aquecimento</h3>
+        <div id="ag-aquecimento-proximo"></div>
+        <p class="muted" style="font-size:11px;margin-top:10px">Roda pelo daemon de agendamentos. Deixe o LeadForge aberto no horário marcado.</p>
+        <h3 style="margin-top:14px">Agendamentos do aquecimento</h3>
+        <div id="ag-aquecimento-lista"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════════════════
+       📧 5. E-MAILS
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-emails">
+    <div class="hdr">
+      <h1>E-mail Marketing (Gmail)</h1>
+      <div class="hdr-actions">
+        <button class="btn" onclick="emailCarregarTudo()">🔄 Atualizar</button>
+      </div>
+    </div>
+
+    <div id="email-aviso" style="margin-bottom:12px"></div>
+
+    <!-- SUBTABS EMAIL -->
+    <div class="subtabs" id="subtabs-email">
+      <button class="subtab active" onclick="switchSubtab('email', 'disparos')">Disparos &amp; Controle</button>
+      <button class="subtab" onclick="switchSubtab('email', 'listas')">Listas de Prospects</button>
+      <button class="subtab" onclick="switchSubtab('email', 'templates')">Templates</button>
+      <button class="subtab" onclick="switchSubtab('email', 'contas')">Contas de envio</button>
+      <button class="subtab" onclick="switchSubtab('email', 'agendamento')">Agendamento</button>
+    </div>
+
+    <!-- SUBPANE: DISPAROS -->
+    <div class="subpane active" id="subpane-email-disparos">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Nova campanha</h3>
+          <p class="muted">Campanha é a lista + a mensagem. É ela que o disparo executa.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">Nome da campanha</label>
+            <input id="email-camp-nome" placeholder="ex.: Agências — Parceria — agosto" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Lista de prospects</label>
+            <select id="email-camp-lista" class="lf-input"></select>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Mensagem (template)</label>
+            <select id="email-camp-template" class="lf-input"></select>
+            <div id="email-camp-previa" class="muted" style="font-size:11px;margin-top:4px"></div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Contas remetentes</label>
+            <div id="email-camp-contas-resumo" style="font-size:12px;color:#94a3b8;padding:8px;border:1px solid #2a3a52;border-radius:6px;background:#151d2e"></div>
+            <div id="email-camp-contas" style="display:none;max-height:150px;overflow:auto;border:1px solid #2a3a52;border-top:none;border-radius:0 0 6px 6px;padding:8px"></div>
+          </div>
+          <div id="email-camp-resumo" style="margin-top:10px;font-size:12px;color:#64748b"></div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="emailCriarCampanha()">+ Criar campanha</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Disparo</h3>
+          <div id="email-disparo-estado" style="margin-bottom:10px"></div>
+          <label class="lf-label">Campanha a disparar</label>
+          <select id="email-disparo-campanha" class="lf-input"></select>
+          <div class="row-flex" style="margin:10px 0">
+            <div>
+              <label class="lf-label">Intervalo mínimo (s)</label>
+              <input id="email-delay-min" type="number" min="1" value="30" class="lf-input" style="width:110px">
+            </div>
+            <div>
+              <label class="lf-label">Intervalo máximo (s)</label>
+              <input id="email-delay-max" type="number" min="1" value="90" class="lf-input" style="width:110px">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" id="email-btn-disparar" onclick="emailIniciarDisparo()">▶ Iniciar disparo</button>
+            <button class="btn btn-danger" id="email-btn-parar" onclick="emailPararDisparo()">■ Abortar disparo</button>
+          </div>
+          <div id="email-kpis-box" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Campanhas cadastradas</h3>
+        <div id="email-campanhas-lista"></div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Log do disparo</h3>
+        <pre id="email-disparo-log" style="background:#0f1626;border:1px solid #2a3a52;border-radius:6px;padding:10px;max-height:220px;overflow:auto;font-size:11px;color:#94a3b8;white-space:pre-wrap;margin:0">sem disparo recente.</pre>
+      </div>
+    </div>
+
+    <!-- SUBPANE: LISTAS -->
+    <div class="subpane" id="subpane-email-listas">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Importar lista</h3>
+          <label class="lf-label">Nome da lista</label>
+          <input id="email-lista-nome" placeholder="ex.: Agências RJ — agosto" class="lf-input">
+          <p class="muted" style="font-size:12px;margin:8px 0 6px">Um por linha. Só o e-mail é obrigatório:<br><code>email@empresa.com, Empresa, dominio.com</code></p>
+          <textarea id="email-lista-texto" rows="9" class="lf-input" style="font-family:monospace"></textarea>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="emailImportarLista()">Importar lista</button>
+        </div>
+        <div class="card-box">
+          <h3>Listas cadastradas</h3>
+          <div id="email-listas-cadastradas"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANE: TEMPLATES -->
+    <div class="subpane" id="subpane-email-templates">
+      <!-- Personalização por lead: preenchido por persoDesenhar('email') -->
+      <div class="card-box" id="perso-email" style="margin-bottom:16px"></div>
+      <div class="grid-2">
+        <div class="card-box">
+          <h3 id="email-tpl-titulo">Novo template</h3>
+          <p class="muted">Variáveis: <code>{{empresa}}</code>, <code>{{email}}</code>, <code>{{dominio}}</code></p>
+          <input type="hidden" id="email-tpl-id" value="">
+          <div style="margin-top:8px">
+            <label class="lf-label">Nome (uso interno)</label>
+            <input id="email-tpl-nome" placeholder="ex.: Agências — Parceria" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Assunto</label>
+            <input id="email-tpl-assunto" placeholder="ex.: Parceria com a {{empresa}}" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Corpo</label>
+            <textarea id="email-tpl-corpo" rows="12" class="lf-input"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-primary" onclick="emailSalvarTemplate()">Salvar template</button>
+            <button class="btn" onclick="emailLimparFormTemplate()">Limpar</button>
+          </div>
+        </div>
+        <div class="card-box">
+          <h3>Templates cadastrados</h3>
+          <div id="email-templates-lista"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBPANE: CONTAS DE ENVIO -->
+    <div class="subpane" id="subpane-email-contas">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Adicionar conta de envio</h3>
+          <p class="muted">São duas etapas: cadastrar aqui e depois <b>autenticar</b> no Google. Conta sem autenticação aparece na lista, mas não envia.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">E-mail da conta</label>
+            <input id="email-conta-email" placeholder="conta@gmail.com" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Nome do remetente (o que o destinatário vê)</label>
+            <input id="email-conta-nome" placeholder="ex.: Maria Souza" class="lf-input">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Limite (24h)</label>
+            <input id="email-conta-limite" type="number" min="1" max="500" value="70" class="lf-input" style="width:120px">
+            <div class="muted" style="font-size:11px;margin-top:4px">Conta nova aguenta pouco. Comece em 20–30 e suba aos poucos: volume alto em conta fria derruba a reputação.</div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="emailCriarConta()">+ Cadastrar conta</button>
+        </div>
+        <div class="card-box">
+          <h3>Capacidade de hoje</h3>
+          <div id="email-contas-resumo"></div>
+        </div>
+      </div>
+      <div class="card-box" style="margin-top:16px">
+        <h3>Contas cadastradas</h3>
+        <div id="email-contas-lista"></div>
+      </div>
+    </div>
+      <!-- SUBPANE: AGENDAMENTO -->
+    <div class="subpane" id="subpane-email-agendamento">
+      <div class="grid-2">
+        <div class="card-box">
+          <h3>Agendar início dos envios</h3>
+          <p class="muted">Dispara uma campanha do mail bot no horário marcado.</p>
+          <div style="margin-top:10px">
+            <label class="lf-label">Horário</label>
+            <input id="ag-email-hora" type="time" value="09:00" class="lf-input" style="width:140px">
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Dias da semana</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px"><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="0" checked> seg</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="1" checked> ter</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="2" checked> qua</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="3" checked> qui</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="4" checked> sex</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="5"> sáb</label><label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#94a3b8"><input type="checkbox" class="ag-email-dia" value="6"> dom</label></div>
+          </div>
+          <div style="margin-top:8px">
+            <label class="lf-label">Campanha a disparar</label>
+            <select id="ag-email-campanha" class="lf-input"></select>
+          </div>
+          <div class="row-flex" style="margin-top:8px;gap:8px">
+            <div><label class="lf-label">Intervalo mín. (s)</label>
+              <input id="ag-email-min" type="number" min="1" value="30" class="lf-input" style="width:110px"></div>
+            <div><label class="lf-label">Intervalo máx. (s)</label>
+              <input id="ag-email-max" type="number" min="1" value="90" class="lf-input" style="width:110px"></div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="agCriar('email')">+ Criar agendamento</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Próximo disparo</h3>
+          <div id="ag-email-proximo"></div>
+          <p class="muted" style="font-size:11px;margin-top:10px">O agendamento roda pelo daemon,
+          que sobe junto com o painel. Deixe o LeadForge aberto no horário marcado.</p>
+        </div>
+      </div>
+
+      <div class="card-box" style="margin-top:16px">
+        <h3>Agendamentos deste canal</h3>
+        <div id="ag-email-lista"></div>
+      </div>
+    </div>
+
+  </section>
+
+
+
+
+
+  <!-- ═════════════════════════════════════════════════════════════════════════
+       ⚙️ 10. CONFIG
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <section class="pane" id="pane-config">
+    <div class="hdr">
+      <h1>Configurações</h1>
+      <div class="hdr-actions">
+        <button class="btn" onclick="cfgCarregar()">🔄 Atualizar</button>
+      </div>
+    </div>
+
+    <!-- MODO DE ENVIO: a trava mais perigosa do sistema fica em primeiro -->
+    <div class="card-box" style="margin-bottom:16px">
+      <h3>Modo de envio</h3>
+      <p class="muted">Decide se as mensagens saem para contatos reais ou apenas para os destinos de teste. É a única trava que vale para os três canais ao mesmo tempo.</p>
+      <div id="cfg-modo-atual" style="margin:12px 0"></div>
+      <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+        <div>
+          <label class="lf-label">Modo</label>
+          <select id="cfg-modo" class="lf-input" style="width:220px">
+            <option value="teste">Teste — só destinos liberados</option>
+            <option value="ao_vivo">Ao vivo — envia para contatos reais</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="cfgSalvarModo()">Aplicar modo</button>
+      </div>
+      <div id="cfg-destinos" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card-box" style="margin-bottom:16px">
+      <h3>Backup e migração</h3>
+      <p class="muted">Leva <b>os seus dados</b> — bancos, contas conectadas, sessões logadas, nichos,
+      materiais e logs. O programa em si não entra: ele vem do instalador.</p>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0 8px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#94a3b8">
+          <input type="checkbox" id="bkp-sessoes" checked onchange="bkpPrevisao()">
+          Incluir sessões logadas <span class="muted" id="bkp-peso-sessoes"></span></label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#94a3b8">
+          <input type="checkbox" id="bkp-logs" checked onchange="bkpPrevisao()"> Incluir logs</label>
+      </div>
+      <div id="bkp-previsao" class="list" style="max-height:230px;overflow:auto"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn btn-primary" onclick="bkpExportar()">⬇ Gerar pacote de dados</button>
+        <button class="btn" onclick="backupCriar()">Backup rápido (disco local)</button>
+      </div>
+
+      <div style="margin-top:16px;border-top:1px solid #1e293b;padding-top:14px">
+        <label class="lf-label">Pacotes gerados</label>
+        <div id="bkp-exports" class="list" style="max-height:180px;overflow:auto"></div>
+      </div>
+
+      <div style="margin-top:16px;border-top:1px solid #1e293b;padding-top:14px">
+        <h3 style="font-size:14px">Importar numa instalação nova</h3>
+        <p class="muted">Escolha um pacote <code>.zip</code> gerado aqui. Antes de escrever qualquer
+        coisa, o painel guarda uma cópia do estado atual — restaurar substitui os dados de agora.</p>
+        <input type="file" id="bkp-arquivo" class="lf-input" accept=".zip" style="margin-top:8px"
+               onchange="bkpInspecionar()">
+        <div id="bkp-manifesto" style="margin-top:10px"></div>
+      </div>
+
+      <div style="margin-top:16px;border-top:1px solid #1e293b;padding-top:14px">
+        <label class="lf-label">Backups automáticos no disco (30 dias)</label>
+        <div id="backup-list" class="list" style="max-height:180px;overflow:auto;margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- DIAGNÓSTICO -->
+    <div class="card-box">
+      <h3>Diagnóstico do sistema</h3>
+      <p class="muted">Onde cada coisa mora. Serve para responder "o painel está olhando o arquivo certo?" sem abrir terminal.</p>
+      <div id="cfg-sistema" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Tela de carregamento: some quando as abas terminam de carregar -->
+<div id="boot" class="boot">
+  <div class="boot-caixa">
+    <div class="boot-logo">LeadForge</div>
+    <div class="boot-barra"><div class="boot-barra-fill" id="boot-fill"></div></div>
+    <div class="boot-passo" id="boot-passo">iniciando...</div>
+    <div class="boot-erro" id="boot-erro"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="/static/app.js"></script>
+
+  <!-- Barra de seleção em massa: aparece quando há cards marcados -->
+  <div id="bulk-bar" class="bulk-bar">
+    <span><b id="bulk-count">0</b> selecionado(s)</span>
+    <select id="bulk-col" class="lf-input" style="width:auto"></select>
+    <button class="btn btn-sm btn-primary" onclick="bulkMover()">Mover</button>
+    <span class="muted" style="font-size:11px">|</span>
+    <select id="bulk-quadro" class="lf-input" style="width:auto"></select>
+    <button class="btn btn-sm" onclick="bulkMoverQuadro()">Mudar de quadro</button>
+    <span class="muted" style="font-size:11px">|</span>
+    <button class="btn btn-sm btn-danger" onclick="bulkExcluir()"
+            title="apaga os selecionados; lead real pede confirmação">Excluir</button>
+    <button class="btn btn-sm" onclick="clearSelection()">Limpar</button>
+  </div>
+
+  <!-- Gaveta do lead: o conteúdo é montado pelo JS ao abrir um card -->
+  <div id="overlay" class="overlay" onclick="if(event.target===this)fecharModal()">
+    <aside id="drawer" class="drawer"></aside>
+  </div>
+
+</body>
+</html>

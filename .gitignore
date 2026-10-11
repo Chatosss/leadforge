@@ -1,0 +1,59 @@
+# ── Segredos ────────────────────────────────────────────────────────────────
+.env
+*.pem
+licenca.json
+out/licencas/
+
+# ── Dados de terceiros e bancos (leads, conversas, contatos) ───────────────
+data/
+out/
+output/
+log_prospeccao.txt
+*.db
+*.db-*
+*.sqlite*
+*.log
+
+# ── Sessões logadas (Instagram e WhatsApp) ─────────────────────────────────
+senders/dm_bot/session_data/
+senders/dm_bot/perfis/
+senders/whatsapp_bot/contas.json
+senders/whatsapp_bot/resposta.json
+.wwebjs_cache/
+.wwebjs_auth/
+
+# ── Dependências, builds e caches ──────────────────────────────────────────
+node_modules/
+__pycache__/
+*.pyc
+build_cache/
+dist/
+build/
+*.spec
+
+# ── Cópias antigas e backups locais ────────────────────────────────────────
+_backup_*/
+senders/dm_bot_novo/
+senders/mail_bot_novo/
+scraper_copy/
+
+# ── Anotações de trabalho (ficam só na máquina) ────────────────────────────
+.claude/
+CLAUDE.md
+task_plan.md
+findings.md
+progress.md
+estado-do-projeto.md
+*_SPEC_*.md
+ESTRUTURA_INTERACAO_OTIMIZADA.md
+IMPLEMENTACAO_MENSAGENS.md
+INSTAGRAM_API_OFICIAL_v023.md
+RESUMO_OPERACIONAL.md
+CHANGELOG.md
+
+# ── Sistema ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+senders/whatsapp_bot/server.antigo.js
+log_prospeccao*.txt

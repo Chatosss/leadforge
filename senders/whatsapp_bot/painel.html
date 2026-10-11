@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatsApp - LeadForge</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",Roboto,Arial,sans-serif;background:#eef2f6;color:#1a2430;padding:22px}
+  .topo{background:linear-gradient(120deg,#0f2f43,#17607e);color:#fff;padding:18px 24px;
+    border-radius:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+  .topo h1{font-size:19px}
+  .topo .s{font-size:12.5px;opacity:.85}
+  .pill{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700}
+  .on{background:#dcfce7;color:#166534}.off{background:#fee2e2;color:#b91c1c}.wait{background:#fef9c3;color:#854d0e}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+  .card{background:#fff;border:1px solid #e3e9ef;border-radius:14px;padding:20px;box-shadow:0 2px 10px rgba(20,40,60,.06)}
+  .card h2{font-size:15px;margin-bottom:10px;color:#0f2f43}
+  .muted{color:#7a8a99;font-size:12.5px}
+  #qrbox{text-align:center;padding:14px}
+  #qrbox img{width:250px;height:250px;border:8px solid #fff;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+  .btn{background:#17607e;color:#fff;border:none;padding:11px 22px;border-radius:9px;
+    font-size:14px;font-weight:600;cursor:pointer}
+  .btn:hover{background:#12506a}
+  .btn.sec{background:#fff;color:#17607e;border:1px solid #cdd8e1}
+  input,textarea{width:100%;padding:10px 12px;border:1px solid #e3e9ef;border-radius:8px;
+    font-size:13.5px;font-family:inherit;margin-top:6px}
+  label{font-size:12px;color:#7a8a99;font-weight:600;display:block;margin-top:10px}
+  #log{background:#0f1a22;color:#c8e6d5;font-family:Consolas,monospace;font-size:11.5px;
+    padding:12px;border-radius:9px;height:260px;overflow:auto;white-space:pre-wrap;line-height:1.6}
+  .passos{font-size:13px;line-height:1.9;color:#33475b;padding-left:18px}
+  .ok{color:#166534;font-weight:600}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div>
+    <h1>💬 WhatsApp do LeadForge</h1>
+    <div class="s">Conecte sua conta, dispare mensagens e deixe a IA atender</div>
+  </div>
+  <div id="status" class="pill off">desconectado</div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>1. Conectar sua conta</h2>
+    <p class="muted">Escaneie o código com o WhatsApp do celular que vai fazer a prospecção.
+      A sessão fica salva: você só faz isso uma vez.</p>
+    <ol class="passos">
+      <li>Abra o WhatsApp no celular</li>
+      <li>Toque em <b>Configurações → Aparelhos conectados</b></li>
+      <li>Toque em <b>Conectar um aparelho</b></li>
+      <li>Aponte para o código abaixo</li>
+    </ol>
+    <div id="qrbox">
+      <button class="btn" onclick="iniciar()">Gerar código QR</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Testar envio</h2>
+    <p class="muted">Mande uma mensagem para você mesmo antes de disparar para clientes.</p>
+    <label>Número (com DDD)</label>
+    <input id="num" placeholder="82999999999">
+    <label>Mensagem</label>
+    <textarea id="msg" rows="3">Teste do LeadForge. Funcionando.</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" onclick="enviar()">Enviar</button>
+      <button class="btn sec" onclick="verificar()">Tem WhatsApp?</button>
+    </div>
+    <div id="res" style="margin-top:12px;font-size:13px"></div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h2>3. Resposta automática da IA</h2>
+    <p class="muted">Quem a IA pode responder quando chega mensagem. Comece em
+      <b>desligada</b> e só libere depois de testar.</p>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn sec" id="m-off"   onclick="setModo('off')">Desligada</button>
+      <button class="btn sec" id="m-lista" onclick="setModo('lista')">Só a lista abaixo</button>
+      <button class="btn sec" id="m-todos" onclick="setModo('todos')">Todo mundo</button>
+      <span id="modo-atual" class="muted" style="align-self:center"></span>
+    </div>
+    <label>Números liberados (um por linha, com DDD)</label>
+    <textarea id="permitidos" rows="3" placeholder="82999999999"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <button class="btn" onclick="salvarLista()">Salvar lista</button>
+      <span id="res-trava" class="muted"></span>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h2>Registro de atividade</h2>
+    <div id="log">aguardando...</div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+async function iniciar(){
+  $('#qrbox').innerHTML = '<p class="muted">Iniciando o WhatsApp, aguarde o código...</p>';
+  await fetch('/api/iniciar', {method:'POST'});
+}
+async function enviar(){
+  const numero = $('#num').value.trim(), mensagem = $('#msg').value.trim();
+  if(!numero || !mensagem){ $('#res').innerHTML = 'Preencha número e mensagem.'; return; }
+  $('#res').innerHTML = 'enviando...';
+  const r = await (await fetch('/api/enviar',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({numero,mensagem})})).json();
+  $('#res').innerHTML = r.ok ? '<span class="ok">✓ Mensagem enviada</span>'
+                             : '✗ ' + (r.erro || 'falhou');
+}
+async function verificar(){
+  const numero = $('#num').value.trim();
+  if(!numero){ $('#res').innerHTML = 'Informe o número.'; return; }
+  const r = await (await fetch('/api/verificar?numero='+encodeURIComponent(numero))).json();
+  $('#res').innerHTML = r.tem === true ? '<span class="ok">✓ Este número tem WhatsApp</span>'
+                      : r.tem === false ? '✗ Este número não tem WhatsApp'
+                      : '? ' + (r.erro || 'não foi possível verificar');
+}
+
+let editandoLista = false;
+$('#permitidos').addEventListener('focus', () => editandoLista = true);
+
+async function setModo(modo){
+  const r = await (await fetch('/api/resposta',{method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify({modo})})).json();
+  mostrarTrava(r);
+  $('#res-trava').innerHTML = '<span class="ok">✓ modo salvo</span>';
+}
+async function salvarLista(){
+  const permitidos = $('#permitidos').value;
+  const r = await (await fetch('/api/resposta',{method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify({permitidos})})).json();
+  editandoLista = false;
+  mostrarTrava(r);
+  $('#res-trava').innerHTML = '<span class="ok">✓ ' + r.permitidos.length + ' número(s) liberado(s)</span>';
+}
+function mostrarTrava(t){
+  if(!t) return;
+  for(const m of ['off','lista','todos']){
+    const b = $('#m-'+m);
+    b.className = (t.modo===m) ? 'btn' : 'btn sec';
+  }
+  $('#modo-atual').textContent = t.modo==='off'   ? 'a IA não responde ninguém'
+                               : t.modo==='lista' ? 'a IA responde só os números da lista'
+                               : 'a IA responde qualquer mensagem recebida';
+  if(!editandoLista) $('#permitidos').value = (t.permitidos||[]).join('\n');
+}
+
+async function atualizar(){
+  try{
+    const s = await (await fetch('/api/status')).json();
+    const el = $('#status');
+    if(s.pronto){ el.className='pill on'; el.textContent='conectado' + (s.numero? ' · '+s.numero : ''); }
+    else if(s.iniciado){ el.className='pill wait'; el.textContent='aguardando leitura do QR'; }
+    else { el.className='pill off'; el.textContent='desconectado'; }
+
+    if(s.temQr){
+      const q = await (await fetch('/api/qr')).json();
+      if(q.qr) $('#qrbox').innerHTML = '<img src="'+q.qr+'" alt="QR"><p class="muted" style="margin-top:10px">Escaneie com o WhatsApp do celular</p>';
+    } else if(s.pronto){
+      $('#qrbox').innerHTML = '<p class="ok" style="font-size:16px">✓ Conta conectada</p>'+
+        '<p class="muted" style="margin-top:6px">Você já pode disparar mensagens pelo dashboard.</p>';
+    }
+    mostrarTrava(s.resposta);
+    $('#log').textContent = (s.log||[]).join('\n') || 'sem atividade ainda';
+  }catch(e){ /* servidor ainda subindo */ }
+}
+setInterval(atualizar, 2000); atualizar();
+</script>
+</body>
+</html>
